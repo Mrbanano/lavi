@@ -1,0 +1,90 @@
+<h2>Solo la cara - expresiones modulares</h2>
+<p class="subtitle">Ojos, boca, cejas sobre fondo de color configurable</p>
+
+<div class="cards">
+  <div class="card" data-choice="pixel" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#2d3748;display:flex;align-items:center;justify-content:center;padding:40px;border-radius:20px">
+      <svg width="160" height="120" viewBox="0 0 160 120">
+        <!-- Pixel art eyes -->
+        <g fill="white">
+          <!-- Left eye - 3x3 grid -->
+          <rect x="30" y="30" width="8" height="8" rx="2"/>
+          <rect x="40" y="30" width="8" height="8" rx="2"/>
+          <rect x="50" y="30" width="8" height="8" rx="2"/>
+          <rect x="30" y="40" width="8" height="8" rx="2"/>
+          <rect x="40" y="40" width="8" height="8" rx="2"/>
+          <rect x="50" y="40" width="8" height="8" rx="2"/>
+          <rect x="30" y="50" width="8" height="8" rx="2"/>
+          <rect x="40" y="50" width="8" height="8" rx="2"/>
+          <rect x="50" y="50" width="8" height="8" rx="2"/>
+          <!-- Right eye - 3x3 grid -->
+          <rect x="100" y="30" width="8" height="8" rx="2"/>
+          <rect x="110" y="30" width="8" height="8" rx="2"/>
+          <rect x="120" y="30" width="8" height="8" rx="2"/>
+          <rect x="100" y="40" width="8" height="8" rx="2"/>
+          <rect x="110" y="40" width="8" height="8" rx="2"/>
+          <rect x="120" y="40" width="8" height="8" rx="2"/>
+          <rect x="100" y="50" width="8" height="8" rx="2"/>
+          <rect x="110" y="50" width="8" height="8" rx="2"/>
+          <rect x="120" y="50" width="8" height="8" rx="2"/>
+        </g>
+        <!-- Smile -->
+        <path d="M 55 85 Q 80 100 105 85" stroke="white" stroke-width="4" fill="none" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="card-body">
+      <h3>Pixel Clásico</h3>
+      <p>Ojos cuadrados pixelados, boca curva simple. Retro y limpio</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="soft" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#1e3a5f;display:flex;align-items:center;justify-content:center;padding:40px;border-radius:20px">
+      <svg width="160" height="120" viewBox="0 0 160 120">
+        <!-- Soft rounded eyes -->
+        <ellipse cx="50" cy="45" rx="16" ry="20" fill="white"/>
+        <ellipse cx="110" cy="45" rx="16" ry="20" fill="white"/>
+        <ellipse cx="53" cy="47" rx="9" ry="11" fill="#1e3a5f"/>
+        <ellipse cx="113" cy="47" rx="9" ry="11" fill="#1e3a5f"/>
+        <circle cx="56" cy="43" r="4" fill="white"/>
+        <circle cx="116" cy="43" r="4" fill="white"/>
+        <!-- Blush -->
+        <ellipse cx="30" cy="65" rx="10" ry="6" fill="#f472b6" opacity="0.4"/>
+        <ellipse cx="130" cy="65" rx="10" ry="6" fill="#f472b6" opacity="0.4"/>
+        <!-- Smile -->
+        <path d="M 60 80 Q 80 95 100 80" stroke="white" stroke-width="3" fill="none" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="card-body">
+      <h3>Soft Tierno</h3>
+      <p>Ojos grandes redondeados, sonrojo, muy expressivo y tierno</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="glow" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#0f0f0f;display:flex;align-items:center;justify-content:center;padding:40px;border-radius:20px">
+      <svg width="160" height="120" viewBox="0 0 160 120">
+        <defs>
+          <radialGradient id="glow1" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#fbbf24"/>
+            <stop offset="100%" stop-color="#fbbf24" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+        <!-- Glow -->
+        <circle cx="50" cy="45" r="22" fill="url(#glow1)" opacity="0.5"/>
+        <circle cx="110" cy="45" r="22" fill="url(#glow1)" opacity="0.5"/>
+        <!-- Eyes -->
+        <circle cx="50" cy="45" r="12" fill="#fbbf24"/>
+        <circle cx="110" cy="45" r="12" fill="#fbbf24"/>
+        <circle cx="50" cy="45" r="6" fill="#fef3c7"/>
+        <circle cx="110" cy="45" r="6" fill="#fef3c7"/>
+        <!-- Smile -->
+        <path d="M 65 80 Q 80 90 95 80" stroke="#fbbf24" stroke-width="3" fill="none" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="card-body">
+      <h3>Ojos Glow</h3>
+      <p>Ojos brillantes dorados sobre fondo negro, misterioso y acogedor</p>
+    </div>
+  </div>
+</div>

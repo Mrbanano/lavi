@@ -1,0 +1,125 @@
+<h2>Estilo más con carisma</h2>
+<p class="subtitle">Inspirado en tu nueva referencia - robot redondo y tierno</p>
+
+<div class="cards">
+  <div class="card" data-choice="robotcute" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#2d3748;display:flex;align-items:center;justify-content:center;padding:30px;border-radius:20px">
+      <svg width="180" height="160" viewBox="0 0 180 160">
+        <!-- Robot head with helmet -->
+        <defs>
+          <linearGradient id="orange" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#ff8c42"/>
+            <stop offset="100%" stop-color="#e67e22"/>
+          </linearGradient>
+          <linearGradient id="orangeDark" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#e67e22"/>
+            <stop offset="100%" stop-color="#d35400"/>
+          </linearGradient>
+        </defs>
+        <!-- Antenna -->
+        <rect x="85" y="8" width="10" height="15" rx="5" fill="url(#orange)"/>
+        <circle cx="90" cy="8" r="6" fill="#fbbf24"/>
+        <!-- Head/helmet -->
+        <rect x="30" y="25" width="120" height="110" rx="35" fill="url(#orange)"/>
+        <!-- Inner screen -->
+        <rect x="42" y="37" width="96" height="86" rx="25" fill="#1a1a2e"/>
+        <!-- Eyes -->
+        <circle cx="68" cy="75" r="10" fill="white"/>
+        <circle cx="112" cy="75" r="10" fill="white"/>
+        <!-- Smile -->
+        <path d="M 72 95 Q 90 108 108 95" stroke="white" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <!-- Ears -->
+        <rect x="15" y="65" width="18" height="30" rx="9" fill="url(#orangeDark)"/>
+        <rect x="147" y="65" width="18" height="30" rx="9" fill="url(#orangeDark)"/>
+      </svg>
+    </div>
+    <div class="card-body">
+      <h3>Robot Naranja</h3>
+      <p>Cascaro naranja, pantalla negra, ojos blancos simples. Tierno y con personalidad</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="robotblue" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#1e293b;display:flex;align-items:center;justify-content:center;padding:30px;border-radius:20px">
+      <svg width="180" height="160" viewBox="0 0 180 160">
+        <defs>
+          <linearGradient id="blue" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#60a5fa"/>
+            <stop offset="100%" stop-color="#3b82f6"/>
+          </linearGradient>
+          <linearGradient id="blueDark" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#3b82f6"/>
+            <stop offset="100%" stop-color="#2563eb"/>
+          </linearGradient>
+        </defs>
+        <!-- Antenna -->
+        <circle cx="90" cy="12" r="8" fill="#93c5fd"/>
+        <rect x="87" y="18" width="6" height="12" rx="3" fill="url(#blue)"/>
+        <!-- Head -->
+        <rect x="30" y="28" width="120" height="110" rx="35" fill="url(#blue)"/>
+        <!-- Screen -->
+        <rect x="42" y="40" width="96" height="86" rx="25" fill="#0f172a"/>
+        <!-- Eyes - bigger, cuter -->
+        <ellipse cx="65" cy="78" rx="12" ry="14" fill="white"/>
+        <ellipse cx="115" cy="78" rx="12" ry="14" fill="white"/>
+        <circle cx="67" cy="80" r="6" fill="#0f172a"/>
+        <circle cx="117" cy="80" r="6" fill="#0f172a"/>
+        <circle cx="69" cy="77" r="2" fill="white"/>
+        <circle cx="119" cy="77" r="2" fill="white"/>
+        <!-- Blush -->
+        <ellipse cx="45" cy="90" rx="8" ry="5" fill="#f472b6" opacity="0.4"/>
+        <ellipse cx="135" cy="90" rx="8" ry="5" fill="#f472b6" opacity="0.4"/>
+        <!-- Smile -->
+        <path d="M 75 100 Q 90 112 105 100" stroke="white" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <!-- Ears -->
+        <rect x="12" y="68" width="20" height="28" rx="10" fill="url(#blueDark)"/>
+        <rect x="148" y="68" width="20" height="28" rx="10" fill="url(#blueDark)"/>
+      </svg>
+    </div>
+    <div class="card-body">
+      <h3>Robot Azul</h3>
+      <p>Estilo reference 3 - azul brillante, ojos grandes con highlights, súper tierno</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="robotgreen" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#1a2332;display:flex;align-items:center;justify-content:center;padding:30px;border-radius:20px">
+      <svg width="180" height="160" viewBox="0 0 180 160">
+        <defs>
+          <linearGradient id="green" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#4ade80"/>
+            <stop offset="100%" stop-color="#22c55e"/>
+          </linearGradient>
+          <linearGradient id="greenDark" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#22c55e"/>
+            <stop offset="100%" stop-color="#16a34a"/>
+          </linearGradient>
+        </defs>
+        <!-- Antenna -->
+        <rect x="85" y="5" width="10" height="18" rx="5" fill="url(#green)"/>
+        <circle cx="90" cy="5" r="5" fill="#86efac"/>
+        <!-- Head -->
+        <rect x="30" y="25" width="120" height="110" rx="35" fill="url(#green)"/>
+        <!-- Screen -->
+        <rect x="42" y="37" width="96" height="86" rx="25" fill="#0f172a"/>
+        <!-- Eyes - playful -->
+        <circle cx="65" cy="75" r="11" fill="white"/>
+        <circle cx="115" cy="75" r="11" fill="white"/>
+        <!-- Wink left eye -->
+        <path d="M 54 75 Q 65 68 76 75" stroke="#0f172a" stroke-width="4" fill="none"/>
+        <!-- Right eye normal -->
+        <circle cx="117" cy="77" r="5" fill="#0f172a"/>
+        <circle cx="119" cy="75" r="2" fill="white"/>
+        <!-- Big smile -->
+        <path d="M 68 95 Q 90 115 112 95" stroke="white" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <!-- Ears -->
+        <rect x="12" y="65" width="20" height="30" rx="10" fill="url(#greenDark)"/>
+        <rect x="148" y="65" width="20" height="30" rx="10" fill="url(#greenDark)"/>
+      </svg>
+    </div>
+    <div class="card-body">
+      <h3>Robot Verde</h3>
+      <p>Verde amigable, guiño juguetón, personalidad traviesa y divertida</p>
+    </div>
+  </div>
+</div>

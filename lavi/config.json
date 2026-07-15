@@ -1,0 +1,18 @@
+{
+  "display": {
+    "fullscreen": true,
+    "bg_color": "#000000"
+  },
+  "animation": {
+    "transition_speed": 0.4,
+    "expression_duration": 3.5,
+    "blink_interval_min": 3,
+    "blink_interval_max": 5
+  },
+  "expressions": ["happy", "laugh", "wink", "love", "sad", "surprised", "sleepy"],
+  "face": {
+    "eye_color": "#ffffff",
+    "mouth_color": "#ffffff",
+    "heart_color": "#ff6b9d"
+  }
+}

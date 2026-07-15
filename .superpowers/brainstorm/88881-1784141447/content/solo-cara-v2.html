@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lavi - Cara</title>
+  <style>
+    :root {
+      --bg: #000000;
+      --white: #ffffff;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      background: var(--bg);
+      font-family: 'Segoe UI', Arial, sans-serif;
+      color: var(--white);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2rem;
+    }
+
+    h1 { font-size: clamp(1.5rem, 4vw, 2rem); text-align: center; }
+    .subtitle { color: #666; font-size: 1rem; text-align: center; }
+
+    /* ============ FACE CONTAINER ============ */
+    .face-container {
+      position: relative;
+      width: min(500px, 90vw);
+      aspect-ratio: 4 / 3;
+      background: var(--bg);
+      border-radius: 30px;
+      overflow: hidden;
+    }
+
+    /* ============ FACE LAYERS ============ */
+    .face {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+    .face.active { opacity: 1; }
+
+    /* ============ EYES ============ */
+    .eye {
+      position: absolute;
+      top: 35%;
+      width: 18%;
+      aspect-ratio: 1;
+      background: var(--white);
+      border-radius: 50%;
+    }
+    .eye.l { left: 22%; }
+    .eye.r { right: 22%; }
+
+    /* ============ MOUTH ============ */
+    .mouth {
+      position: absolute;
+      left: 50%;
+      top: 62%;
+      translate: -50% 0;
+    }
+
+    /* ============ EXPRESSIONS ============ */
+
+    /* HAPPY */
+    .face.happy .mouth {
+      width: 28%;
+      aspect-ratio: 2.2 / 1;
+      border-bottom: 8px solid var(--white);
+      border-radius: 0 0 999px 999px;
+    }
+
+    /* LAUGH */
+    .face.laugh .eye {
+      background: transparent;
+      border-top: 8px solid var(--white);
+      border-radius: 999px 999px 0 0;
+      width: 20%;
+      aspect-ratio: 2 / 1;
+      top: 38%;
+    }
+    .face.laugh .mouth {
+      width: 36%;
+      aspect-ratio: 1.8 / 1;
+      background: var(--white);
+      border-radius: 10% 10% 999px 999px;
+    }
+
+    /* WINK */
+    .face.wink .eye.r {
+      background: transparent;
+      border-bottom: 8px solid var(--white);
+      border-radius: 0 0 999px 999px;
+      width: 20%;
+      aspect-ratio: 2.4 / 1;
+      top: 40%;
+    }
+    .face.wink .mouth {
+      width: 28%;
+      aspect-ratio: 2 / 1;
+      border-bottom: 8px solid var(--white);
+      border-radius: 0 0 999px 999px;
+      transform: rotate(-5deg);
+    }
+
+    /* LOVE */
+    .face.love .eye {
+      background: transparent;
+    }
+    .face.love .eye::before,
+    .face.love .eye::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      width: 50%;
+      height: 80%;
+      background: #ff6b9d;
+      border-radius: 999px 999px 0 0;
+    }
+    .face.love .eye::before { left: 0; transform: rotate(-45deg); transform-origin: 100% 100%; }
+    .face.love .eye::after { left: 50%; transform: rotate(45deg); transform-origin: 0 100%; }
+    .face.love .mouth {
+      width: 24%;
+      aspect-ratio: 2.4 / 1;
+      background: var(--white);
+      border-radius: 999px;
+    }
+
+    /* SAD */
+    .face.sad .eye { top: 38%; }
+    .face.sad .mouth {
+      width: 24%;
+      aspect-ratio: 2.2 / 1;
+      border-top: 8px solid var(--white);
+      border-radius: 999px 999px 0 0;
+    }
+
+    /* SURPRISED */
+    .face.surprised .eye {
+      width: 22%;
+      top: 32%;
+    }
+    .face.surprised .mouth {
+      width: 18%;
+      aspect-ratio: 1 / 1;
+      background: var(--white);
+      border-radius: 50%;
+    }
+
+    /* BLINK - parpadeo natural */
+    .face.blink .eye {
+      animation: blink 3s infinite;
+    }
+    @keyframes blink {
+      0%, 90%, 100% { transform: scaleY(1); }
+      95% { transform: scaleY(0.08); }
+    }
+    .face.blink .mouth {
+      width: 28%;
+      aspect-ratio: 2.2 / 1;
+      border-bottom: 8px solid var(--white);
+      border-radius: 0 0 999px 999px;
+    }
+
+    /* SLEEPY */
+    .face.sleepy .eye {
+      height: 6px;
+      top: 42%;
+      border-radius: 999px;
+    }
+    .face.sleepy .mouth {
+      width: 20%;
+      aspect-ratio: 2 / 1;
+      border-bottom: 6px solid var(--white);
+      border-radius: 0 0 999px 999px;
+    }
+
+    /* ============ CONTROLS ============ */
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      justify-content: center;
+      max-width: 600px;
+    }
+    .controls button {
+      padding: 0.5rem 1rem;
+      border: 2px solid #333;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--white);
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .controls button:hover { border-color: #666; }
+    .controls button.active { border-color: var(--white); background: rgba(255,255,255,0.1); }
+
+    .color-picker {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+    .color-picker label { color: #666; font-size: 0.9rem; }
+    .color-picker input[type="color"] {
+      width: 40px;
+      height: 30px;
+      border: none;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>Lavi</h1>
+  <p class="subtitle">Cara modular - fondo configurable</p>
+
+  <div class="face-container" id="faceContainer">
+    <!-- Happy -->
+    <div class="face happy active" data-face="happy">
+      <div class="eye l"></div>
+      <div class="eye r"></div>
+      <div class="mouth"></div>
+    </div>
+    <!-- Laugh -->
+    <div class="face laugh" data-face="laugh">
+      <div class="eye l"></div>
+      <div class="eye r"></div>
+      <div class="mouth"></div>
+    </div>
+    <!-- Wink -->
+    <div class="face wink" data-face="wink">
+      <div class="eye l"></div>
+      <div class="eye r"></div>
+      <div class="mouth"></div>
+    </div>
+    <!-- Love -->
+    <div class="face love" data-face="love">
+      <div class="eye l"></div>
+      <div class="eye r"></div>
+      <div class="mouth"></div>
+    </div>
+    <!-- Sad -->
+    <div class="face sad" data-face="sad">
+      <div class="eye l"></div>
+      <div class="eye r"></div>
+      <div class="mouth"></div>
+    </div>
+    <!-- Surprised -->
+    <div class="face surprised" data-face="surprised">
+      <div class="eye l"></div>
+      <div class="eye r"></div>
+      <div class="mouth"></div>
+    </div>
+    <!-- Blink -->
+    <div class="face blink" data-face="blink">
+      <div class="eye l"></div>
+      <div class="eye r"></div>
+      <div class="mouth"></div>
+    </div>
+    <!-- Sleepy -->
+    <div class="face sleepy" data-face="sleepy">
+      <div class="eye l"></div>
+      <div class="eye r"></div>
+      <div class="mouth"></div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button onclick="showFace('happy')" class="active">Feliz</button>
+    <button onclick="showFace('laugh')">Risa</button>
+    <button onclick="showFace('wink')">Guiño</button>
+    <button onclick="showFace('love')">Enamorado</button>
+    <button onclick="showFace('sad')">Triste</button>
+    <button onclick="showFace('surprised')">Sorprendido</button>
+    <button onclick="showFace('blink')">Parpadeo</button>
+    <button onclick="showFace('sleepy')">Somnoliento</button>
+  </div>
+
+  <div class="color-picker">
+    <label>Fondo:</label>
+    <input type="color" value="#000000" onchange="changeBg(this.value)">
+  </div>
+
+  <script>
+    function showFace(name) {
+      document.querySelectorAll('.face').forEach(f => f.classList.remove('active'));
+      document.querySelector(`.face.${name}`).classList.add('active');
+      document.querySelectorAll('.controls button').forEach(b => b.classList.remove('active'));
+      event.target.classList.add('active');
+    }
+
+    function changeBg(color) {
+      document.documentElement.style.setProperty('--bg', color);
+      document.getElementById('faceContainer').style.background = color;
+    }
+  </script>
+</body>
+</html>
