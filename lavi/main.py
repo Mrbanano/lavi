@@ -32,17 +32,18 @@ def main():
 
     current_face = faces[state_machine.get_current()]
     next_face = None
-    animator.start_transition(0, 255)
+    transitioning = False
 
     while renderer.running:
         dt = renderer.handle_events() or renderer.tick(30)
 
         event = state_machine.update()
 
-        if event == "expression_change":
+        if event == "expression_change" and not transitioning:
             next_name = state_machine.get_current()
             next_face = faces.get(next_name)
-            animator.start_transition(255, 0)
+            animator.start_transition("pop")
+            transitioning = True
 
         if event == "blink_start":
             pass
@@ -52,17 +53,18 @@ def main():
 
         animator.update(dt)
 
-        if not animator.is_done():
-            alpha = animator.get_alpha()
-            if next_face and alpha < 128:
-                current_face = next_face
-                next_face = None
-                animator.start_transition(0, 255)
-        else:
-            alpha = 255
+        if transitioning and animator.get_scale() < 0.1 and next_face:
+            current_face = next_face
+            next_face = None
+
+        if transitioning and animator.is_done():
+            transitioning = False
 
         renderer.clear()
-        renderer.draw_face(current_face, alpha)
+        scale = animator.get_scale()
+        alpha = animator.get_alpha()
+        offset = animator.get_offset()
+        renderer.draw_face(current_face, alpha, scale, offset)
         renderer.update()
 
     renderer.quit()

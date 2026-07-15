@@ -25,17 +25,17 @@ class Renderer:
     def clear(self):
         self.screen.fill(self.bg_color)
 
-    def draw_face(self, face, alpha):
+    def draw_face(self, face, alpha=255, scale=1.0, offset=(0, 0)):
         face.set_alpha(alpha)
-        face_rect = self._get_face_rect()
+        face_rect = self._get_face_rect(scale, offset)
         face.draw(self.screen, face_rect)
 
-    def _get_face_rect(self):
+    def _get_face_rect(self, scale=1.0, offset=(0, 0)):
         w = self.screen.get_width()
         h = self.screen.get_height()
-        size = min(w, h) * 0.6
-        x = (w - size) / 2
-        y = (h - size) / 2
+        size = min(w, h) * 0.6 * scale
+        x = (w - size) / 2 + offset[0]
+        y = (h - size) / 2 + offset[1]
         return (x, y, size, size)
 
     def update(self):
