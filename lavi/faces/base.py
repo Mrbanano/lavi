@@ -11,12 +11,19 @@ class Face:
         self.mouth = Mouth(face_config.get("mouth_color", "#ffffff"))
         self.alpha = 255
         self.name = "base"
+        self.can_blink = False
 
     def set_alpha(self, alpha):
         self.alpha = alpha
         self.left_eye.set_alpha(alpha)
         self.right_eye.set_alpha(alpha)
         self.mouth.set_alpha(alpha)
+
+    def set_blink(self, progress):
+        if not self.can_blink:
+            return
+        self.left_eye.set_blink(progress)
+        self.right_eye.set_blink(progress)
 
     def setup(self):
         pass

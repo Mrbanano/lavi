@@ -33,9 +33,11 @@ class Renderer:
     def _get_face_rect(self, scale=1.0, offset=(0, 0)):
         w = self.screen.get_width()
         h = self.screen.get_height()
-        size = min(w, h) * 0.6 * scale
-        x = (w - size) / 2 + offset[0]
-        y = (h - size) / 2 + offset[1]
+        base_size = min(w, h) * 0.6
+        size = base_size * scale
+        # El offset llega como fracción del tamaño de la cara, no en píxeles.
+        x = (w - size) / 2 + offset[0] * base_size
+        y = (h - size) / 2 + offset[1] * base_size
         return (x, y, size, size)
 
     def update(self):
@@ -45,12 +47,17 @@ class Renderer:
         return self.clock.tick(fps) / 1000.0
 
     def handle_events(self):
+        """Devuelve la lista de acciones que pidió el usuario."""
+        actions = []
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     self.running = False
+                elif event.key == pygame.K_c:
+                    actions.append("toggle_preview")
+        return actions
 
     def quit(self):
         pygame.quit()

@@ -14,5 +14,30 @@
     "eye_color": "#ffffff",
     "mouth_color": "#ffffff",
     "heart_color": "#ff6b9d"
+  },
+  "camera": {
+    "enabled": true,
+    "index": 0,
+    "width": 320,
+    "height": 240,
+    "capture_fps": 15,
+    "detect_fps": 8,
+    "flip_horizontal": true,
+    "warmup_frames": 10,
+    "scale_factor": 1.2,
+    "min_neighbors": 5,
+    "min_face_fraction": 0.15
+  },
+  "preview": {
+    "enabled": true,
+    "start_expanded": false,
+    "position": "bottom_right",
+    "width_fraction": 0.22,
+    "margin_fraction": 0.02,
+    "show_stats": true
+  },
+  "presence": {
+    "wake_delay": 0.4,
+    "sleep_delay": 8.0
   }
 }

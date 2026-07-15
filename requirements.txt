@@ -1,0 +1,14 @@
+pygame>=2.5,<3
+
+# OpenCV tiene que ser de la serie 4: la 5.0 eliminó CascadeClassifier y dejó de
+# traer los XML de Haar, y en Raspberry Pi las wheels precompiladas de piwheels
+# son 4.x (compilar la 5 en una Pi 3B son horas).
+opencv-python>=4.8,<5
+
+# Llega con opencv, pero preview.py lo importa directo, así que va declarado.
+numpy>=1.24
+
+# En la Raspberry Pi, además, para la cámara CSI:
+#   sudo apt install -y python3-picamera2
+# Va por apt y no por pip a propósito: picamera2 depende de libcamera, que es una
+# librería del sistema. Si no está, Lavi cae solo a una webcam USB por OpenCV.

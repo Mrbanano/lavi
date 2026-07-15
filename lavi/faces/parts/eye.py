@@ -20,6 +20,10 @@ class Eye:
     def set_alpha(self, alpha):
         self.alpha = alpha
 
+    def set_blink(self, progress):
+        """0 = abierto, 1 = cerrado del todo."""
+        self.blink_progress = max(0.0, min(1.0, progress))
+
     def draw(self, surface, x, y, size):
         if self.alpha <= 0:
             return
@@ -31,7 +35,14 @@ class Eye:
         color = (*self.color[:3], int(self.alpha))
 
         if self.current_type == EyeType.NORMAL:
-            pygame.draw.circle(temp, color, center, radius)
+            # El párpado aplasta el ojo verticalmente; al final del recorrido
+            # se convierte en la misma línea que el ojo cerrado.
+            open_amount = 1.0 - self.blink_progress
+            if open_amount <= 0.15:
+                pygame.draw.line(temp, color, (size * 0.2, center[1]), (size * 0.8, center[1]), max(2, size // 15))
+            else:
+                h = max(2, int(size * open_amount))
+                pygame.draw.ellipse(temp, color, pygame.Rect(0, center[1] - h // 2, size, h))
 
         elif self.current_type == EyeType.CLOSED:
             line_color = color

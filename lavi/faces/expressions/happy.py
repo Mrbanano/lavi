@@ -6,6 +6,7 @@ class HappyFace(Face):
     def __init__(self, config=None):
         super().__init__(config)
         self.name = "happy"
+        self.can_blink = True
 
     def setup(self):
         self.left_eye.set_type(EyeType.NORMAL)
