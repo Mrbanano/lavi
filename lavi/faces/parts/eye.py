@@ -1,3 +1,5 @@
+import math
+
 import pygame
 
 class EyeType:
@@ -52,7 +54,11 @@ class Eye:
             self._draw_heart(temp, center, radius, color)
 
         elif self.current_type == EyeType.WINK:
-            pygame.draw.circle(temp, color, center, radius)
+            # Arco hacia arriba: el ojo cerrado "sonriendo". La cuerda del arco
+            # cae en center[1], así queda a la misma altura que el ojo abierto.
+            h = int(size * 0.35)
+            rect = pygame.Rect(size * 0.15, center[1] - h // 2, size * 0.7, h)
+            pygame.draw.arc(temp, color, rect, 0, math.pi, max(2, size // 12))
 
         elif self.current_type == EyeType.SLEEPY:
             line_color = color
@@ -61,7 +67,6 @@ class Eye:
         surface.blit(temp, (x, y))
 
     def _draw_heart(self, surface, center, radius, color):
-        import math
         cx, cy = center
         r = radius * 0.8
         points = []

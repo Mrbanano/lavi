@@ -9,5 +9,5 @@ class WinkFace(Face):
 
     def setup(self):
         self.left_eye.set_type(EyeType.NORMAL)
-        self.right_eye.set_type(EyeType.CLOSED)
+        self.right_eye.set_type(EyeType.WINK)
         self.mouth.set_type(MouthType.SMILE)

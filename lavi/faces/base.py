@@ -11,7 +11,6 @@ class Face:
         self.mouth = Mouth(face_config.get("mouth_color", "#ffffff"))
         self.alpha = 255
         self.name = "base"
-        self.can_blink = False
 
     def set_alpha(self, alpha):
         self.alpha = alpha
@@ -20,8 +19,9 @@ class Face:
         self.mouth.set_alpha(alpha)
 
     def set_blink(self, progress):
-        if not self.can_blink:
-            return
+        # Sin filtrar por expresión: solo los ojos NORMAL reaccionan al párpado.
+        # Los cerrados, dormidos, de corazón y de guiño ya lo ignoran por su
+        # cuenta, así que no hay que ir marcando a mano quién puede parpadear.
         self.left_eye.set_blink(progress)
         self.right_eye.set_blink(progress)
 
