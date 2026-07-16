@@ -8,7 +8,7 @@ VENV=".venv"
 
 if [ ! -d "$VENV" ]; then
     echo "[lavi] creando venv..."
-    python3 -m venv "$VENV"
+    python3 -m venv --system-site-packages "$VENV"
     source "$VENV/bin/activate"
     pip install -r requirements.txt
     echo "[lavi] dependencias instaladas"
