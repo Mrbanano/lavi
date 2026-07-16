@@ -1,6 +1,6 @@
 import math
 
-from lavi.faces.expressions import BASELINE, FEATURES, blend, preset
+from lavi.faces.expressions import BASELINE, FEATURES, SLEEP, blend, preset
 
 
 class Mood:
@@ -68,3 +68,7 @@ class Mood:
 
     def get(self):
         return self.features
+
+    def is_sleeping(self):
+        """Duerme si su reposo es dormir y no le queda emoción encima."""
+        return self.baseline == SLEEP and self.intensity < 0.15

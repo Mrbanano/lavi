@@ -30,6 +30,10 @@ class Renderer:
         face_rect = self._get_face_rect(scale, offset)
         face.draw(self.screen, face_rect)
 
+    def face_rect(self, scale=1.0, offset=(0, 0)):
+        """Dónde cae la cara. Lo necesita quien dibuje alrededor, como las Z."""
+        return self._get_face_rect(scale, offset)
+
     def _get_face_rect(self, scale=1.0, offset=(0, 0)):
         w = self.screen.get_width()
         h = self.screen.get_height()

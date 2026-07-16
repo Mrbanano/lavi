@@ -16,7 +16,7 @@ def _distance(a, b):
 
 
 class GestureRecognizer:
-    """Interpreta 21 landmarks de mano como gestos.
+    """Interpreta 21 landmarks de mano como gestos: saludo, ✌️ y .l.
 
     **Corre en el thread de visión, no en el de render, y eso es a propósito.**
     El saludo se detecta siguiendo la muñeca en el tiempo, y el loop de render va
@@ -60,11 +60,15 @@ class GestureRecognizer:
         if width <= 0:
             return None
 
+        extended = self._extended_fingers(landmarks)
+
         gesture = None
-        if self._is_peace(landmarks):
-            # La postura gana al vaivén: si estás enseñando el ✌️ y además
-            # mueves la mano, lo que quieres decir es ✌️.
+        # Las posturas ganan al vaivén: si estás enseñando algo y además mueves
+        # la mano, lo que quieres decir es lo que enseñas.
+        if extended["indice"] and extended["corazon"] and not extended["anular"] and not extended["menique"]:
             gesture = "amor_y_paz"
+        elif extended["corazon"] and not extended["indice"] and not extended["anular"] and not extended["menique"]:
+            gesture = "peineta"
         elif self._update_wave(landmarks[WRIST][0] / float(width), now):
             gesture = "saludo"
 
@@ -83,11 +87,9 @@ class GestureRecognizer:
         wrist = landmarks[WRIST]
         return _distance(landmarks[tip], wrist) > _distance(landmarks[pip], wrist) * 1.15
 
-    def _is_peace(self, landmarks):
-        extended = {name: self._extended(landmarks, tip, pip)
-                    for name, (tip, pip) in FINGERS.items()}
-        return (extended["indice"] and extended["corazon"]
-                and not extended["anular"] and not extended["menique"])
+    def _extended_fingers(self, landmarks):
+        return {name: self._extended(landmarks, tip, pip)
+                for name, (tip, pip) in FINGERS.items()}
 
     def _update_wave(self, x, now):
         if self._last_extreme is None:

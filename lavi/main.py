@@ -11,6 +11,7 @@ from lavi.engine.idle import IdleLife
 from lavi.engine.presence import PresenceTracker
 from lavi.engine.gaze import GazeTracker
 from lavi.faces.face import Face
+from lavi.faces.zzz import SleepZs
 from lavi.faces.expressions import BASELINE, SLEEP
 from lavi.vision.service import VisionService
 from lavi.vision.preview import CameraPreview
@@ -51,6 +52,7 @@ def main(argv=None):
 
     renderer = Renderer(config)
     face = Face(config)
+    zzz = SleepZs(config)
     mood = Mood(config)
     idle = IdleLife(config)
     presence = PresenceTracker(config)
@@ -92,9 +94,12 @@ def main(argv=None):
                 mood.push("emocionada")
             elif gesture == "amor_y_paz":
                 mood.push("enamorada")
+            elif gesture == "peineta":
+                mood.push("enfadada")
 
         idle.update(dt)
         mood.update(dt)
+        zzz.update(dt, mood.is_sleeping())
 
         # Con alguien delante, Lavi le mira. Sin nadie, la mirada deriva sola:
         # quedarse clavada al frente es lo que hace que algo parezca apagado.
@@ -111,7 +116,9 @@ def main(argv=None):
         renderer.clear()
         # La escala la lleva la respiración. Antes la ocupaba el pop, que era un
         # parche para tapar el cambiazo de cara; ya no hay cambiazo que tapar.
-        renderer.draw_face(face, 255, idle.breath_scale(), (0, 0))
+        breath = idle.breath_scale()
+        renderer.draw_face(face, 255, breath, (0, 0))
+        zzz.draw(renderer.screen, renderer.face_rect(breath))
         preview.draw(renderer.screen, vision)
         renderer.update()
 

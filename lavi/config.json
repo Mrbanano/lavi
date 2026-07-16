@@ -20,7 +20,16 @@
   "face": {
     "eye_color": "#ffffff",
     "mouth_color": "#ffffff",
+    "brow_color": "#ffffff",
     "heart_color": "#ff6b9d"
+  },
+  "zzz": {
+    "enabled": true,
+    "interval": 1.6,
+    "lifetime": 3.2,
+    "rise": 0.42,
+    "drift": 0.16,
+    "color": "#ffffff"
   },
   "camera": {
     "enabled": true,
