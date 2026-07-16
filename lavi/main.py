@@ -87,6 +87,12 @@ def main(argv=None):
             elif event == "sleep":
                 mood.set_baseline(SLEEP)
 
+            gesture = vision.take_gesture()
+            if gesture == "saludo":
+                mood.push("emocionada")
+            elif gesture == "amor_y_paz":
+                mood.push("enamorada")
+
         idle.update(dt)
         mood.update(dt)
 

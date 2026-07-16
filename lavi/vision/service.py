@@ -5,7 +5,9 @@ import cv2
 
 from lavi.vision.camera import open_camera, CameraError
 from lavi.vision.detector import FaceDetector, DetectorError
+from lavi.vision.hands import HandDetector, HandError
 from lavi.vision.platform_detect import describe_platform
+from lavi.engine.gestures import GestureRecognizer
 
 
 class VisionService:
@@ -26,20 +28,31 @@ class VisionService:
         self.detect_fps = cam_config.get("detect_fps", 8)
         self.flip_horizontal = cam_config.get("flip_horizontal", True)
 
+        gesture_config = config.get("gestures", {})
+        self.gestures_enabled = gesture_config.get("enabled", True)
+        # No baja de ~8: un saludo es una oscilación de 1-2 Hz y por debajo de
+        # eso hay aliasing. Ver GestureRecognizer.
+        self.gesture_fps = gesture_config.get("detect_fps", 8)
+
         # Se resuelve una vez: en la Pi esto abre /proc/device-tree/model, y
         # stats() se llama en cada frame con el preview abierto.
         self._platform_name = describe_platform()
 
         self._camera = None
         self._detector = None
+        self._hand_detector = None
+        self._gestures = GestureRecognizer(config)
         self._thread = None
         self._stop = threading.Event()
         self._lock = threading.Lock()
 
         self._frame = None
         self._faces = []
+        self._hands = []
+        self._gesture = None
         self._error = None
         self._detect_ms = 0.0
+        self._gesture_ms = 0.0
         self._capture_fps_actual = 0.0
 
     def start(self):
@@ -57,6 +70,15 @@ class VisionService:
             self._close_camera()
             return False
 
+        if self.gestures_enabled:
+            try:
+                self._hand_detector = HandDetector(self._config)
+            except HandError as e:
+                # Quedarse sin gestos es perder una gracia, no el kiosko: Lavi
+                # sigue despertando y siguiéndote con la mirada.
+                print("[lavi] sin gestos: %s" % e)
+                self.gestures_enabled = False
+
         self._stop.clear()
         self._thread = threading.Thread(target=self._loop, name="lavi-vision", daemon=True)
         self._thread.start()
@@ -65,7 +87,9 @@ class VisionService:
     def _loop(self):
         capture_interval = 1.0 / max(1, self.capture_fps)
         detect_interval = 1.0 / max(1, self.detect_fps)
+        gesture_interval = 1.0 / max(1, self.gesture_fps)
         last_detect = 0.0
+        last_gesture = 0.0
         last_frame_time = time.time()
 
         try:
@@ -90,6 +114,22 @@ class VisionService:
                     detect_ms = (time.time() - t0) * 1000.0
                     last_detect = start
 
+                # Buscar manos solo si hay alguien delante. Cuesta 5x lo que la
+                # cara, y un saludo sin nadie a quien saludar no existe: así la
+                # sala vacía no paga nada.
+                hands = None
+                gesture = None
+                gesture_ms = None
+                someone_here = faces if faces is not None else self._faces
+                if (self._hand_detector is not None and someone_here
+                        and start - last_gesture >= gesture_interval):
+                    t0 = time.time()
+                    hands = self._hand_detector.detect(frame)
+                    gesture_ms = (time.time() - t0) * 1000.0
+                    last_gesture = start
+                    height, width = frame.shape[:2]
+                    gesture = self._gestures.update(hands, (width, height), start)
+
                 now = time.time()
                 delta = now - last_frame_time
                 last_frame_time = now
@@ -99,6 +139,14 @@ class VisionService:
                     if faces is not None:
                         self._faces = faces
                         self._detect_ms = detect_ms
+                    if hands is not None:
+                        self._hands = hands
+                        self._gesture_ms = gesture_ms
+                    if gesture is not None:
+                        # Se queda esperando a que el render lo recoja: si lo
+                        # sobrescribiera el siguiente ciclo, un saludo podría
+                        # perderse entre dos frames de render.
+                        self._gesture = gesture
                     if delta > 0:
                         # Media móvil: si no, el número baila y no se puede leer.
                         self._capture_fps_actual = 0.9 * self._capture_fps_actual + 0.1 * (1.0 / delta)
@@ -114,6 +162,17 @@ class VisionService:
         """Último frame y últimas caras. No bloquea."""
         with self._lock:
             return self._frame, list(self._faces)
+
+    def hands(self):
+        with self._lock:
+            return list(self._hands)
+
+    def take_gesture(self):
+        """Devuelve el gesto pendiente y lo consume. None si no hay."""
+        with self._lock:
+            gesture = self._gesture
+            self._gesture = None
+            return gesture
 
     def primary_face(self):
         """Caja de la cara más grande y tamaño del frame, o (None, None).
@@ -147,6 +206,8 @@ class VisionService:
                 # Interesa verlo en el preview: si falta el .onnx, esto cae a
                 # "haar" en silencio y la detección empeora mucho sin avisar.
                 "detector": self._detector.backend if self._detector else None,
+                "hands": len(self._hands),
+                "gesture_ms": self._gesture_ms,
             }
 
     @property

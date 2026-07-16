@@ -6,6 +6,7 @@ PANEL_BG = (18, 18, 22, 220)
 PANEL_BORDER = (70, 70, 82)
 TEXT_COLOR = (200, 200, 210)
 FACE_BOX_COLOR = (0, 230, 120)
+HAND_DOT_COLOR = (255, 190, 60)
 DOT_FACE = (0, 230, 120)
 DOT_IDLE = (110, 110, 120)
 DOT_ERROR = (230, 70, 70)
@@ -116,6 +117,7 @@ class CameraPreview:
             video = self._frame_to_surface(frame, panel_w, video_h)
             surface.blit(video, (x, y))
             self._draw_face_boxes(surface, faces, frame, x, y, panel_w, video_h)
+            self._draw_hands(surface, service.hands(), frame, x, y, panel_w, video_h)
         else:
             msg = font.render("sin señal", True, TEXT_COLOR)
             surface.blit(msg, (x + (panel_w - msg.get_width()) // 2, y + video_h // 2))
@@ -148,6 +150,18 @@ class CameraPreview:
             )
             pygame.draw.rect(surface, FACE_BOX_COLOR, rect, width=2)
 
+    def _draw_hands(self, surface, hands, frame, x, y, view_w, view_h):
+        """Los 21 puntos. Es la única forma de ver por qué un gesto no engancha."""
+        if not hands:
+            return
+        scale_x = view_w / frame.shape[1]
+        scale_y = view_h / frame.shape[0]
+        radius = max(1, int(view_w * 0.008))
+        for landmarks in hands:
+            for (px, py) in landmarks:
+                pygame.draw.circle(surface, HAND_DOT_COLOR,
+                                   (int(x + px * scale_x), int(y + py * scale_y)), radius)
+
     def _stats_lines(self, service):
         stats = service.stats()
         if stats["error"]:
@@ -155,4 +169,5 @@ class CameraPreview:
         return [
             "%s  %s" % (stats["platform"], stats["detector"] or "?"),
             "caras %d   %.0f fps   %.0f ms" % (stats["faces"], stats["capture_fps"], stats["detect_ms"]),
+            "manos %d   gestos %.0f ms" % (stats["hands"], stats["gesture_ms"]),
         ]

@@ -40,6 +40,16 @@
     "enabled": true,
     "time_constant": 0.25
   },
+  "gestures": {
+    "enabled": true,
+    "detect_fps": 8,
+    "palm_score_threshold": 0.8,
+    "hand_conf_threshold": 0.8,
+    "wave_reversals": 3,
+    "wave_window": 2.0,
+    "wave_min_amplitude": 0.05,
+    "cooldown": 3.0
+  },
   "preview": {
     "enabled": true,
     "start_expanded": false,
