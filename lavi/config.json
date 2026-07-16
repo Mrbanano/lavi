@@ -79,8 +79,8 @@
   "camera": {
     "enabled": true,
     "index": 0,
-    "width": 320,
-    "height": 240,
+    "width": 240,
+    "height": 180,
     "capture_fps": 15,
     "detect_fps": 5,
     "detect_width": 160,
@@ -91,6 +91,13 @@
     "scale_factor": 1.2,
     "min_neighbors": 5,
     "min_face_fraction": 0.15
+  },
+  "adaptive": {
+    "enabled": true,
+    "low_fps": 3,
+    "high_fps": 8,
+    "move_threshold": 0.03,
+    "history_len": 4
   },
   "gaze": {
     "enabled": true,

@@ -25,20 +25,24 @@ class VisionService:
         self._config = config
         self.enabled = cam_config.get("enabled", True)
         self.capture_fps = cam_config.get("capture_fps", 15)
-        self.detect_fps = cam_config.get("detect_fps", 8)
+        self.detect_fps = cam_config.get("detect_fps", 5)
         self.flip_horizontal = cam_config.get("flip_horizontal", True)
 
         gesture_config = config.get("gestures", {})
         self.gestures_enabled = gesture_config.get("enabled", True)
-        # No baja de ~8: un saludo es una oscilación de 1-2 Hz y por debajo de
-        # eso hay aliasing. Ver GestureRecognizer.
-        self.gesture_fps = gesture_config.get("detect_fps", 8)
-        # No buscar manos si la cara es más pequeña que este fraction del frame.
-        # Si la persona está lejos, no va a hacer gestos.
+        self.gesture_fps = gesture_config.get("detect_fps", 5)
         self._min_hand_face_frac = gesture_config.get("min_hand_face_fraction", 0.18)
 
-        # Se resuelve una vez: en la Pi esto abre /proc/device-tree/model, y
-        # stats() se llama en cada frame con el preview abierto.
+        # Detección adaptativa: rastrear movimiento de cara para ajustar FPS.
+        adaptive_config = config.get("adaptive", {})
+        self._adaptive_enabled = adaptive_config.get("enabled", True)
+        self._adapt_low = adaptive_config.get("low_fps", 3)
+        self._adapt_high = adaptive_config.get("high_fps", 8)
+        self._adapt_move_threshold = adaptive_config.get("move_threshold", 0.03)
+        self._face_history = []
+        self._history_len = adaptive_config.get("history_len", 4)
+        self._current_detect_fps = self.detect_fps
+
         self._platform_name = describe_platform()
 
         self._camera = None
@@ -95,31 +99,54 @@ class VisionService:
         last_gesture = 0.0
         last_frame_time = time.time()
 
+        # Double buffer: pre-capturar siguiente frame mientras se procesa.
+        next_frame = None
+
         try:
             while not self._stop.is_set():
                 start = time.time()
 
-                frame = self._camera.read()
+                # Double buffer: reusar frame pre-capturado o leer uno nuevo.
+                if next_frame is not None:
+                    frame = next_frame
+                    next_frame = None
+                else:
+                    frame = self._camera.read()
+
                 if frame is None:
                     time.sleep(capture_interval)
                     continue
 
                 if self.flip_horizontal:
-                    # Espejo: que la persona se vea como en un espejo, y que las
-                    # coordenadas del preview coincidan con lo que percibe.
                     frame = cv2.flip(frame, 1)
+
+                # Pre-capturar siguiente frame en paralelo (no bloquea, la
+                # cámara ya va a 60+ FPS y el buffer lo absorbe).
+                # Solo lo hacemos si no hay nada que procesar ahora.
+                if start - last_detect >= detect_interval:
+                    next_frame = self._camera.read()
+                    if next_frame is not None and self.flip_horizontal:
+                        next_frame = cv2.flip(next_frame, 1)
+
+                # Detección adaptativa: ajustar intervalo según movimiento.
+                if self._adaptive_enabled:
+                    current_interval = 1.0 / max(1, self._current_detect_fps)
+                else:
+                    current_interval = detect_interval
 
                 faces = None
                 detect_ms = None
-                if start - last_detect >= detect_interval:
+                if start - last_detect >= current_interval:
                     t0 = time.time()
                     faces = self._detector.detect(frame)
                     detect_ms = (time.time() - t0) * 1000.0
                     last_detect = start
 
-                # Buscar manos solo si hay alguien delante y está lo suficientemente
-                # cerca. Cuesta 5x lo que la cara, y un saludo sin nadie a quien
-                # saludar no existe: así la sala vacía no paga nada.
+                    # Actualizar historial y decidir siguiente FPS.
+                    if self._adaptive_enabled:
+                        self._update_adaptive(faces, frame.shape[:2])
+
+                # Buscar manos solo si hay alguien delante y está cerca.
                 hands = None
                 gesture = None
                 gesture_ms = None
@@ -152,20 +179,55 @@ class VisionService:
                         self._hands = hands
                         self._gesture_ms = gesture_ms
                     if gesture is not None:
-                        # Se queda esperando a que el render lo recoja: si lo
-                        # sobrescribiera el siguiente ciclo, un saludo podría
-                        # perderse entre dos frames de render.
                         self._gesture = gesture
                     if delta > 0:
-                        # Media móvil: si no, el número baila y no se puede leer.
                         self._capture_fps_actual = 0.9 * self._capture_fps_actual + 0.1 * (1.0 / delta)
 
                 sleep_for = capture_interval - (time.time() - start)
                 if sleep_for > 0:
                     time.sleep(sleep_for)
-        except Exception as e:  # el thread muere en silencio si no se registra
+        except Exception as e:
             with self._lock:
                 self._error = "el thread de visión murió: %r" % (e,)
+
+    def _update_adaptive(self, faces, frame_size):
+        """Ajusta la frecuencia de detección según el movimiento de la cara.
+
+        Si la cara está quieta, baja a _adapt_low FPS para ahorrar CPU.
+        Si se movió mucho o se perdió, sube a _adapt_high FPS para reaccionar
+        rápido.
+        """
+        if faces:
+            biggest = max(faces, key=lambda f: f[2] * f[3])
+            cx = (biggest[0] + biggest[2] / 2) / frame_size[1]
+            cy = (biggest[1] + biggest[3] / 2) / frame_size[0]
+            self._face_history.append((cx, cy))
+        else:
+            self._face_history.append(None)
+
+        if len(self._face_history) > self._history_len:
+            self._face_history.pop(0)
+
+        if len(self._face_history) < 2:
+            return
+
+        # Calcular movimiento máximo entre frames consecutivos.
+        max_move = 0.0
+        prev = None
+        for pos in self._face_history:
+            if pos is not None and prev is not None:
+                dx = pos[0] - prev[0]
+                dy = pos[1] - prev[1]
+                max_move = max(max_move, (dx * dx + dy * dy) ** 0.5)
+            prev = pos
+
+        # Si la cara se perdió (último frame None), subir a máximo.
+        if self._face_history[-1] is None:
+            self._current_detect_fps = self._adapt_high
+        elif max_move < self._adapt_move_threshold:
+            self._current_detect_fps = self._adapt_low
+        else:
+            self._current_detect_fps = self._adapt_high
 
     def snapshot(self):
         """Último frame y últimas caras. No bloquea."""
