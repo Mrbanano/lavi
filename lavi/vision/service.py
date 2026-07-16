@@ -115,6 +115,19 @@ class VisionService:
         with self._lock:
             return self._frame, list(self._faces)
 
+    def primary_face(self):
+        """Caja de la cara más grande y tamaño del frame, o (None, None).
+
+        La más grande y no la primera: si pasa alguien por detrás, Lavi tiene
+        que seguir mirando a quien tiene delante, que es quien ocupa más.
+        """
+        with self._lock:
+            if not self._faces or self._frame is None:
+                return None, None
+            biggest = max(self._faces, key=lambda f: f[2] * f[3])
+            height, width = self._frame.shape[:2]
+            return biggest, (width, height)
+
     def has_face(self):
         with self._lock:
             return len(self._faces) > 0
@@ -131,6 +144,9 @@ class VisionService:
                 "faces": len(self._faces),
                 "error": self._error,
                 "platform": self._platform_name,
+                # Interesa verlo en el preview: si falta el .onnx, esto cae a
+                # "haar" en silencio y la detección empeora mucho sin avisar.
+                "detector": self._detector.backend if self._detector else None,
             }
 
     @property

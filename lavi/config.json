@@ -24,9 +24,14 @@
     "detect_fps": 8,
     "flip_horizontal": true,
     "warmup_frames": 10,
+    "score_threshold": 0.7,
     "scale_factor": 1.2,
     "min_neighbors": 5,
     "min_face_fraction": 0.15
+  },
+  "gaze": {
+    "enabled": true,
+    "time_constant": 0.25
   },
   "preview": {
     "enabled": true,

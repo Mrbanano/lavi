@@ -9,6 +9,7 @@ from lavi.renderer import Renderer
 from lavi.engine.state_machine import StateMachine
 from lavi.engine.animator import Animator
 from lavi.engine.presence import PresenceTracker
+from lavi.engine.gaze import GazeTracker
 from lavi.faces.expressions import create_face
 from lavi.vision.service import VisionService
 from lavi.vision.preview import CameraPreview
@@ -60,6 +61,7 @@ def main(argv=None):
     state_machine = StateMachine(cycle_names, config)
     animator = Animator(config)
     presence = PresenceTracker(config)
+    gaze = GazeTracker(config)
     preview = CameraPreview(config)
 
     vision = VisionService(config)
@@ -94,6 +96,11 @@ def main(argv=None):
         dt = renderer.tick(30)
 
         if vision_ok:
+            # Sin cara detectada el objetivo es (0, 0): la mirada vuelve sola al
+            # frente en vez de quedarse clavada donde estaba la persona.
+            box, frame_size = vision.primary_face()
+            gaze.update(box, frame_size, dt)
+
             presence_event = presence.update(vision.has_face())
             if presence_event == "wake":
                 state_machine.resume()
@@ -118,6 +125,7 @@ def main(argv=None):
             pending_face = None
 
         current_face.set_blink(state_machine.get_blink_progress())
+        current_face.set_gaze(*gaze.get())
 
         renderer.clear()
         renderer.draw_face(current_face, animator.get_alpha(), animator.get_scale(), animator.get_offset())

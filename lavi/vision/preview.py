@@ -153,6 +153,6 @@ class CameraPreview:
         if stats["error"]:
             return ["error: " + stats["error"][:38]]
         return [
-            "%s" % stats["platform"],
+            "%s  %s" % (stats["platform"], stats["detector"] or "?"),
             "caras %d   %.0f fps   %.0f ms" % (stats["faces"], stats["capture_fps"], stats["detect_ms"]),
         ]
