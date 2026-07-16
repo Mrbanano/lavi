@@ -8,10 +8,11 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from lavi.renderer import Renderer
 from lavi.engine.mood import Mood
 from lavi.engine.idle import IdleLife
+from lavi.engine.dance import Dance
 from lavi.engine.presence import PresenceTracker
 from lavi.engine.gaze import GazeTracker
 from lavi.faces.face import Face
-from lavi.faces.zzz import SleepZs
+from lavi.faces.particles import FloatingGlyphs
 from lavi.faces.expressions import BASELINE, SLEEP
 from lavi.vision.service import VisionService
 from lavi.vision.preview import CameraPreview
@@ -52,9 +53,12 @@ def main(argv=None):
 
     renderer = Renderer(config)
     face = Face(config)
-    zzz = SleepZs(config)
+    # Las Z salen de la sien; las notas, de más abajo y hacia los dos lados.
+    zzz = FloatingGlyphs("Z", (0.72, 0.30), config.get("zzz", {}))
+    notes = FloatingGlyphs("♪♫♩♬", (0.50, 0.55), config.get("notes", {}))
     mood = Mood(config)
     idle = IdleLife(config)
+    dance = Dance(config)
     presence = PresenceTracker(config)
     gaze = GazeTracker(config)
     preview = CameraPreview(config)
@@ -99,7 +103,12 @@ def main(argv=None):
 
         idle.update(dt)
         mood.update(dt)
+
+        # Baila solo si no está pasando nada: ni dormida, ni con una emoción
+        # encima. En cuanto pasa algo, deja de bailar.
+        dance.update(dt, mood.is_calm())
         zzz.update(dt, mood.is_sleeping())
+        notes.update(dt, dance.is_dancing())
 
         # Con alguien delante, Lavi le mira. Sin nadie, la mirada deriva sola:
         # quedarse clavada al frente es lo que hace que algo parezca apagado.
@@ -117,8 +126,14 @@ def main(argv=None):
         # La escala la lleva la respiración. Antes la ocupaba el pop, que era un
         # parche para tapar el cambiazo de cara; ya no hay cambiazo que tapar.
         breath = idle.breath_scale()
-        renderer.draw_face(face, 255, breath, (0, 0))
-        zzz.draw(renderer.screen, renderer.face_rect(breath))
+        offset = dance.get_offset()
+        renderer.draw_face(face, 255, breath, offset)
+
+        # Las Z y las notas se mueven con la cara: si se quedaran quietas
+        # mientras ella baila, se verían pegadas al fondo.
+        rect = renderer.face_rect(breath, offset)
+        zzz.draw(renderer.screen, rect)
+        notes.draw(renderer.screen, rect)
         preview.draw(renderer.screen, vision)
         renderer.update()
 

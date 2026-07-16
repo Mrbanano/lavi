@@ -29,7 +29,29 @@
     "lifetime": 3.2,
     "rise": 0.42,
     "drift": 0.16,
+    "size": 0.09,
+    "spread": false,
     "color": "#ffffff"
+  },
+  "notes": {
+    "enabled": true,
+    "interval": 0.7,
+    "lifetime": 2.4,
+    "rise": 0.45,
+    "drift": 0.22,
+    "spawn_offset": 0.44,
+    "size": 0.08,
+    "spread": true,
+    "color": "#ffffff"
+  },
+  "dance": {
+    "enabled": true,
+    "bpm": 96,
+    "duration": 7.0,
+    "interval": [18.0, 40.0],
+    "sway": 0.045,
+    "bob": 0.028,
+    "fade": 0.7
   },
   "camera": {
     "enabled": true,

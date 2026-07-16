@@ -72,3 +72,7 @@ class Mood:
     def is_sleeping(self):
         """Duerme si su reposo es dormir y no le queda emoción encima."""
         return self.baseline == SLEEP and self.intensity < 0.15
+
+    def is_calm(self):
+        """Despierta y sin que le esté pasando nada."""
+        return self.baseline != SLEEP and self.intensity < 0.15
