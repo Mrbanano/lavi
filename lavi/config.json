@@ -3,13 +3,20 @@
     "fullscreen": true,
     "bg_color": "#000000"
   },
-  "animation": {
-    "transition_speed": 0.4,
-    "expression_duration": 3.5,
-    "blink_interval_min": 3,
-    "blink_interval_max": 5
+  "mood": {
+    "decay": 6.0,
+    "feature_time_constant": 0.18
   },
-  "expressions": ["happy", "laugh", "wink", "love", "sad", "surprised", "sleepy"],
+  "idle": {
+    "breath_amplitude": 0.015,
+    "breath_period": 4.0,
+    "blink_interval": [2.0, 6.0],
+    "blink_duration": 0.14,
+    "double_blink_chance": 0.15,
+    "gaze_drift": true,
+    "gaze_drift_amount": 0.25,
+    "gaze_drift_interval": [1.5, 4.0]
+  },
   "face": {
     "eye_color": "#ffffff",
     "mouth_color": "#ffffff",
