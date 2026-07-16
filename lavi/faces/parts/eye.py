@@ -2,19 +2,60 @@ import math
 
 import pygame
 
+# El ojo es más alto que ancho: un círculo perfecto se lee como un punto, y un
+# óvalo vertical tiene más carácter. De paso le da recorrido al parpadeo, que
+# con un círculo se quedaba corto.
+EYE_ASPECT = 0.76      # ancho / alto
+SEGMENTS = 72
+HEART_BUCKETS = 180
+
+
+def _build_heart_radius():
+    """Radio del corazón en cada ángulo, para poder morfear desde un círculo.
+
+    Un círculo es "radio 1 en todos los ángulos". Si el corazón se describe
+    igual — un radio por ángulo — pasar de uno a otro es interpolar números, y
+    entonces el corazón deja de ser la excepción del diseño: se morfea como todo
+    lo demás, sin crossfade y sin corte.
+
+    Se calcula una vez al importar. El bucle fino es para que ningún ángulo se
+    quede sin muestra.
+    """
+    table = [0.0] * HEART_BUCKETS
+    for i in range(7200):
+        t = 2.0 * math.pi * i / 7200.0
+        x = 16.0 * math.sin(t) ** 3
+        # En pygame la y crece hacia abajo, de ahí el signo.
+        y = -(13.0 * math.cos(t) - 5.0 * math.cos(2 * t)
+              - 2.0 * math.cos(3 * t) - math.cos(4 * t))
+        radius = math.hypot(x, y) / 17.0
+        angle = math.atan2(y, x) % (2.0 * math.pi)
+        bucket = int(angle / (2.0 * math.pi) * HEART_BUCKETS) % HEART_BUCKETS
+        table[bucket] = max(table[bucket], radius)
+
+    # Por si algún ángulo se quedara a cero: mejor copiar al vecino que dibujar
+    # un pico hacia el centro.
+    for i, value in enumerate(table):
+        if value <= 0.0:
+            table[i] = table[i - 1]
+    return table
+
+
+_HEART_RADIUS = _build_heart_radius()
+
 
 class Eye:
     """Un ojo, descrito con números y no con tipos.
 
-    Antes había EyeType.NORMAL / CLOSED / HEART / SLEEPY: siete caras discretas
-    que se conmutaban, y por eso hacía falta el pop que tapase el corte. Aquí
-    todo son valores continuos, así que un ojo puede estar a medio camino entre
-    dormido y despierto, y llegar hasta ahí es solo moverse.
+    Antes había EyeType.NORMAL / CLOSED / HEART / SLEEPY: estados discretos que
+    se conmutaban, y por eso hacía falta el pop que tapase el corte. Aquí todo
+    son valores continuos, así que un ojo puede estar a medio camino de
+    cualquier cosa, y llegar hasta ahí es solo moverse.
 
-    El corazón es la excepción confesada: no se puede interpolar desde un
-    círculo, así que va con un crossfade. Se lo permitimos porque solo aparece
-    como respuesta a un gesto explícito, y un salto que contesta a algo que has
-    hecho tú se lee como intención y no como fallo.
+    Los corazones eran la excepción confesada: no se podían interpolar desde un
+    círculo, así que iban con un crossfade que se notaba. Ya no: el ojo es un
+    polígono cuyo radio se interpola ángulo a ángulo, de círculo a corazón. Es
+    un morfeo de verdad y no una mezcla de dos dibujos.
     """
 
     def __init__(self, color="#ffffff"):
@@ -23,7 +64,7 @@ class Eye:
 
         self.open = 1.0     # 0 cerrado del todo, 1 abierto
         self.widen = 0.0    # 0..1, se abre de más: sorpresa
-        self.hearts = 0.0   # 0..1, crossfade de círculo a corazón
+        self.hearts = 0.0   # 0..1, morfea de círculo a corazón
 
     def set_alpha(self, alpha):
         self.alpha = alpha
@@ -41,55 +82,31 @@ class Eye:
             return
 
         temp = pygame.Surface((size, size), pygame.SRCALPHA)
-        cx = cy = size // 2
-        rgb = self.color[:3]
+        cx = cy = size / 2.0
+        color = (*self.color[:3], int(self.alpha))
 
-        # widen agranda el ojo entero: es lo que hace legible la sorpresa.
-        diameter = size * (0.82 + 0.18 * self.widen)
+        full_height = size * (0.92 + 0.08 * self.widen)
+        ry = full_height / 2.0 * self.open
+        rx = full_height / 2.0 * EYE_ASPECT * (1.0 + 0.10 * self.widen)
 
-        circle_alpha = self.alpha * (1.0 - self.hearts)
-        heart_alpha = self.alpha * self.hearts
-
-        # Cada forma va en su propia capa y se pega con blit. Dibujarlas las dos
-        # sobre la misma superficie no funciona: pygame.draw *escribe* el alpha
-        # en vez de mezclarlo, así que la segunda le pisa el suyo a la primera
-        # donde se solapan y el ojo sale gris a mitad del fundido. El blit sí
-        # mezcla, que es lo que hace que esto sea un crossfade y no una pelea.
-        if circle_alpha >= 1:
-            layer = pygame.Surface((size, size), pygame.SRCALPHA)
-            self._draw_circle(layer, cx, cy, diameter, size, (*rgb, int(circle_alpha)))
-            temp.blit(layer, (0, 0))
-        if heart_alpha >= 1:
-            layer = pygame.Surface((size, size), pygame.SRCALPHA)
-            self._draw_heart(layer, cx, cy, diameter * 0.5, (*rgb, int(heart_alpha)))
-            temp.blit(layer, (0, 0))
+        # El párpado aplasta el ojo. Pasado el mínimo ya no es un óvalo de 1px:
+        # es la línea del ojo cerrado, y ahí acaba el recorrido.
+        min_height = max(2.0, size * 0.05)
+        if ry * 2.0 <= min_height:
+            width = max(2, int(size // 16))
+            pygame.draw.line(temp, color, (cx - rx, cy), (cx + rx, cy), width)
+        else:
+            pygame.draw.polygon(temp, color, self._points(cx, cy, rx, ry))
 
         surface.blit(temp, (x, y))
 
-    def _draw_circle(self, temp, cx, cy, diameter, size, color):
-        # El párpado aplasta el ojo verticalmente. Pasado el mínimo ya no es una
-        # elipse de 1px: es la línea del ojo cerrado, y ahí acaba el recorrido.
-        height = diameter * self.open
-        min_height = max(2.0, size * 0.07)
-
-        if height <= min_height:
-            width = max(2, int(size // 14))
-            pygame.draw.line(temp, color,
-                             (cx - diameter / 2, cy), (cx + diameter / 2, cy), width)
-            return
-
-        rect = pygame.Rect(cx - diameter / 2, cy - height / 2, diameter, height)
-        pygame.draw.ellipse(temp, color, rect)
-
-    def _draw_heart(self, temp, cx, cy, radius, color):
-        # El corazón también se aplasta al parpadear: si no, cerraría los ojos y
-        # los corazones se quedarían mirando fijo.
-        squash = max(0.05, self.open)
+    def _points(self, cx, cy, rx, ry):
         points = []
-        for angle in range(0, 360, 4):
-            t = math.radians(angle)
-            hx = 16 * math.sin(t) ** 3
-            hy = -(13 * math.cos(t) - 5 * math.cos(2 * t) - 2 * math.cos(3 * t) - math.cos(4 * t))
-            points.append((cx + hx * radius / 17.0, cy + hy * radius / 17.0 * squash))
-        if len(points) > 2:
-            pygame.draw.polygon(temp, color, points)
+        for i in range(SEGMENTS):
+            angle = 2.0 * math.pi * i / SEGMENTS
+            bucket = int(angle / (2.0 * math.pi) * HEART_BUCKETS) % HEART_BUCKETS
+            # Radio 1 es el óvalo; la tabla es el corazón. En medio, cualquier cosa.
+            radius = 1.0 + (_HEART_RADIUS[bucket] - 1.0) * self.hearts
+            points.append((cx + math.cos(angle) * radius * rx,
+                           cy + math.sin(angle) * radius * ry))
+        return points
