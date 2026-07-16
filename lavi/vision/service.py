@@ -33,6 +33,9 @@ class VisionService:
         # No baja de ~8: un saludo es una oscilación de 1-2 Hz y por debajo de
         # eso hay aliasing. Ver GestureRecognizer.
         self.gesture_fps = gesture_config.get("detect_fps", 8)
+        # No buscar manos si la cara es más pequeña que este fraction del frame.
+        # Si la persona está lejos, no va a hacer gestos.
+        self._min_hand_face_frac = gesture_config.get("min_hand_face_fraction", 0.18)
 
         # Se resuelve una vez: en la Pi esto abre /proc/device-tree/model, y
         # stats() se llama en cada frame con el preview abierto.
@@ -114,20 +117,26 @@ class VisionService:
                     detect_ms = (time.time() - t0) * 1000.0
                     last_detect = start
 
-                # Buscar manos solo si hay alguien delante. Cuesta 5x lo que la
-                # cara, y un saludo sin nadie a quien saludar no existe: así la
-                # sala vacía no paga nada.
+                # Buscar manos solo si hay alguien delante y está lo suficientemente
+                # cerca. Cuesta 5x lo que la cara, y un saludo sin nadie a quien
+                # saludar no existe: así la sala vacía no paga nada.
                 hands = None
                 gesture = None
                 gesture_ms = None
                 someone_here = faces if faces is not None else self._faces
-                if (self._hand_detector is not None and someone_here
+                face_big_enough = False
+                if someone_here:
+                    biggest = max(someone_here, key=lambda f: f[2] * f[3])
+                    _, _, fw, fh = biggest
+                    height, width = frame.shape[:2]
+                    face_big_enough = (fw / width >= self._min_hand_face_frac
+                                       or fh / height >= self._min_hand_face_frac)
+                if (self._hand_detector is not None and face_big_enough
                         and start - last_gesture >= gesture_interval):
                     t0 = time.time()
                     hands = self._hand_detector.detect(frame)
                     gesture_ms = (time.time() - t0) * 1000.0
                     last_gesture = start
-                    height, width = frame.shape[:2]
                     gesture = self._gestures.update(hands, (width, height), start)
 
                 now = time.time()

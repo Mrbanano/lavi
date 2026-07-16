@@ -38,6 +38,11 @@ class FaceDetector:
         self.scale_factor = cam_config.get("scale_factor", 1.2)
         self.min_neighbors = cam_config.get("min_neighbors", 5)
 
+        # Resolución a la que se ejecuta la detección. Más baja = más rápido.
+        # Las coordenadas se reescalan al frame original después.
+        self._detect_w = cam_config.get("detect_width", 160)
+        self._detect_h = cam_config.get("detect_height", 120)
+
         self.backend = None
         self._yunet = None
         self._cascade = None
@@ -45,7 +50,8 @@ class FaceDetector:
 
         if os.path.exists(YUNET_MODEL) and hasattr(cv2, "FaceDetectorYN"):
             self._yunet = cv2.FaceDetectorYN.create(
-                YUNET_MODEL, "", (320, 240), self.score_threshold
+                YUNET_MODEL, "", (self._detect_w, self._detect_h),
+                self.score_threshold
             )
             self.backend = "yunet"
         else:
@@ -74,23 +80,34 @@ class FaceDetector:
 
     def _detect_yunet(self, frame):
         h, w = frame.shape[:2]
-        # setInputSize reconstruye la malla de anclas, así que solo cuando cambia.
-        if self._input_size != (w, h):
-            self._yunet.setInputSize((w, h))
-            self._input_size = (w, h)
+        need_scale = (w != self._detect_w or h != self._detect_h)
 
-        # YuNet come BGR directamente: ni gris ni ecualizado, al contrario que Haar.
-        _, faces = self._yunet.detect(frame)
+        if need_scale:
+            small = cv2.resize(frame, (self._detect_w, self._detect_h),
+                               interpolation=cv2.INTER_AREA)
+        else:
+            small = frame
+
+        if self._input_size != (self._detect_w, self._detect_h):
+            self._yunet.setInputSize((self._detect_w, self._detect_h))
+            self._input_size = (self._detect_w, self._detect_h)
+
+        _, faces = self._yunet.detect(small)
         if faces is None:
             return []
 
+        sx = w / self._detect_w if need_scale else 1.0
+        sy = h / self._detect_h if need_scale else 1.0
         min_side = min(h, w) * self.min_size_fraction
         boxes = []
         for f in faces:
             x, y, fw, fh = f[:4]
-            if fw < min_side and fh < min_side:
+            # Reescalar al frame original.
+            rx, ry = x * sx, y * sy
+            rw, rh = fw * sx, fh * sy
+            if rw < min_side and rh < min_side:
                 continue
-            boxes.append((int(x), int(y), int(fw), int(fh)))
+            boxes.append((int(rx), int(ry), int(rw), int(rh)))
         return boxes
 
     def _detect_haar(self, frame):
