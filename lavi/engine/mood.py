@@ -37,21 +37,28 @@ class Mood:
         self.emotion = BASELINE
         self.intensity = 0.0
         self.features = preset(BASELINE)
+        self._decay = self.decay
 
     def set_baseline(self, name):
         """Dónde vuelve cuando se le pasa: `calma` despierta, `dormida` sin nadie."""
         self.baseline = name
 
-    def push(self, name, intensity=1.0):
-        """Le ha pasado algo. Se le pasará solo."""
+    def push(self, name, intensity=1.0, decay=None):
+        """Le ha pasado algo. Se le pasará solo.
+
+        `decay` deja que cada emoción dure lo suyo: un bostezo se va en dos
+        segundos y un enamoramiento no. Con un único decaimiento para todas,
+        Lavi se quedaba bostezando como si fuera un estado de ánimo.
+        """
         self.emotion = name
         # max() y no asignación: un empujón flojo no debe apagar una emoción que
         # todavía está viva.
         self.intensity = max(self.intensity, max(0.0, min(1.0, intensity)))
+        self._decay = decay if decay is not None else self.decay
 
     def update(self, dt):
-        if self.decay > 0:
-            self.intensity = max(0.0, self.intensity - dt / self.decay)
+        if self._decay > 0:
+            self.intensity = max(0.0, self.intensity - dt / self._decay)
         else:
             self.intensity = 0.0
 

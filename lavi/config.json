@@ -15,7 +15,29 @@
     "double_blink_chance": 0.15,
     "gaze_drift": true,
     "gaze_drift_amount": 0.25,
-    "gaze_drift_interval": [1.5, 4.0]
+    "gaze_drift_interval": [1.5, 4.0],
+    "fly": {
+      "enabled": true,
+      "interval": [20.0, 50.0],
+      "duration": 5.0,
+      "range": 0.8,
+      "speed": 2.2
+    }
+  },
+  "idle_moods": {
+    "enabled": true,
+    "zone_out_interval": [25.0, 60.0],
+    "sigh_interval": [30.0, 70.0]
+  },
+  "body": {
+    "stretch_amount": 0.055,
+    "stretch_lean": 0.03,
+    "stretch_duration": 1.3,
+    "twitch_amount": 0.018,
+    "twitch_duration": 0.28,
+    "twitch_interval": [7.0, 22.0],
+    "sigh_amount": 0.05,
+    "sigh_duration": 2.0
   },
   "face": {
     "eye_color": "#ffffff",
@@ -25,6 +47,7 @@
   },
   "zzz": {
     "enabled": true,
+    "glyphs": "ZZZZZZZZ♥♪",
     "interval": 1.6,
     "lifetime": 3.2,
     "rise": 0.42,
@@ -91,6 +114,7 @@
   },
   "presence": {
     "wake_delay": 0.4,
-    "sleep_delay": 8.0
+    "sleep_delay": 8.0,
+    "drowsy_lead": 2.5
   }
 }

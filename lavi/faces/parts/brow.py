@@ -2,13 +2,13 @@ import pygame
 
 
 class Brow:
-    """Una ceja. Existe solo cuando hace falta.
+    """Una ceja. Siempre está.
 
-    Se apaga (`show` a 0) en la calma a propósito: la cara de Lavi son dos
-    círculos y una boca, y ponerle cejas permanentes le cambiaría el carácter a
-    todas las expresiones. Aparecen cuando aportan algo — enfado, sorpresa — y se
-    van solas. Como `show` es un rasgo continuo más, entran y salen con un
-    fundido, sin corte.
+    Antes se apagaba en la calma y aparecía al enfadarse, buscando mantener la
+    cara mínima. Era un error: a un ser vivo no le crecen cejas cuando se cabrea.
+    Que salgan y entren delata que detrás hay un parámetro, que es justo la
+    ilusión que este milestone intenta sostener. Si las tiene, las tiene siempre;
+    lo que cambia es cómo están puestas.
 
     Los dos extremos no son iguales: el de dentro (el que mira a la nariz) es el
     que se mueve. Bajarlo es enfadarse y subirlo es preocuparse, y esa asimetría
@@ -22,28 +22,24 @@ class Brow:
         self.side = side
         self.alpha = 255
 
-        self.show = 0.0    # 0 invisible, 1 del todo
         self.angle = 0.0   # -1 enfadada (dentro abajo), +1 preocupada (dentro arriba)
         self.raise_ = 0.0  # 0 baja, 1 levantada
 
     def set_alpha(self, alpha):
         self.alpha = alpha
 
-    def set_features(self, show=None, angle=None, raise_=None):
-        if show is not None:
-            self.show = max(0.0, min(1.0, show))
+    def set_features(self, angle=None, raise_=None):
         if angle is not None:
             self.angle = max(-1.0, min(1.0, angle))
         if raise_ is not None:
             self.raise_ = max(0.0, min(1.0, raise_))
 
     def draw(self, surface, x, y, width, height):
-        alpha = self.alpha * self.show
-        if alpha < 1:
+        if self.alpha < 1:
             return
 
         temp = pygame.Surface((width, height), pygame.SRCALPHA)
-        color = (*self.color[:3], int(alpha))
+        color = (*self.color[:3], int(self.alpha))
         line_width = max(2, int(height * 0.30))
 
         # Levantarla la sube dentro de su hueco, sin salirse.

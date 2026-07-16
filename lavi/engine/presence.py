@@ -25,10 +25,15 @@ class PresenceTracker:
 
         self.wake_delay = presence_config.get("wake_delay", 0.4)
         self.sleep_delay = presence_config.get("sleep_delay", 8.0)
+        # Cuánto antes de dormirse avisa de que le está entrando el sueño. Es lo
+        # que da tiempo al bostezo: dormirse de golpe parecía que le bajaban el
+        # brillo, no que se durmiera.
+        self.drowsy_lead = presence_config.get("drowsy_lead", 2.5)
 
         self.state = PresenceState.ASLEEP
         self._first_seen = None
         self._last_seen = time.time()
+        self._drowsy_sent = False
 
     def update(self, has_face):
         now = time.time()
@@ -37,18 +42,25 @@ class PresenceTracker:
             if self._first_seen is None:
                 self._first_seen = now
             self._last_seen = now
+            self._drowsy_sent = False
         else:
             self._first_seen = None
 
         if self.state == PresenceState.ASLEEP:
             if self._first_seen is not None and now - self._first_seen >= self.wake_delay:
                 self.state = PresenceState.AWAKE
+                self._drowsy_sent = False
                 return "wake"
         else:
-            if now - self._last_seen >= self.sleep_delay:
+            alone_for = now - self._last_seen
+            if alone_for >= self.sleep_delay:
                 self.state = PresenceState.ASLEEP
                 self._first_seen = None
                 return "sleep"
+            # Una sola vez por siesta: si se repitiera, bostezaría en bucle.
+            if not self._drowsy_sent and alone_for >= self.sleep_delay - self.drowsy_lead:
+                self._drowsy_sent = True
+                return "drowsy"
 
         return None
 

@@ -67,7 +67,7 @@ class Face:
             eye.set_features(open=eye_open, widen=f["eye_widen"], hearts=f["hearts"])
         self.mouth.set_features(curve=f["mouth_curve"], open=f["mouth_open"])
         for brow in (self.left_brow, self.right_brow):
-            brow.set_features(show=f["brow_show"], angle=f["brow_angle"], raise_=f["brow_raise"])
+            brow.set_features(angle=f["brow_angle"], raise_=f["brow_raise"])
 
         eye_size = int(w * 0.18)
         eye_y = int(y + h * 0.35)
