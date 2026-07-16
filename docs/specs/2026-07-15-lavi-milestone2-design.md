@@ -28,26 +28,46 @@ Fuera, y a propósito:
 
 ### OpenCV 4.x, no 5.x
 `opencv-python` 5.0 **eliminó `cv2.CascadeClassifier` y dejó de traer los XML de
-Haar**. Ofrece `FaceDetectorYN` (YuNet, basado en DNN) en su lugar, que es mejor
-detector, pero:
-- pide descargar y versionar un modelo ONNX aparte,
-- y en Raspberry Pi no hay wheels: la 5 habría que compilarla, que en una 3B son
-  horas.
+Haar**, y en Raspberry Pi no hay wheels de la 5: habría que compilarla, que en
+una 3B son horas. Por eso `requirements.txt` fija `opencv-python>=4.8,<5`.
 
-Por eso `requirements.txt` fija `opencv-python>=4.8,<5`. Si algún día se salta a
-la 5, hay que migrar `lavi/vision/detector.py` a `FaceDetectorYN` y bundlear el
-modelo. `detector.py` detecta este caso y falla con un mensaje explícito en vez
-de con un `AttributeError` a secas.
+Lo que ya no vale es la razón por la que este spec descartaba YuNet. Decía que
+`FaceDetectorYN` era cosa de OpenCV 5: **es falso**, está desde la 4.5.4 y
+funciona en la 4.13 que hay instalada. Lo único que pide de verdad es el modelo
+ONNX aparte, que ahora va versionado en `lavi/vision/models/`.
 
-### Por qué Haar y no MediaPipe
-El destino es una Pi 3B: Cortex-A53, 1GB de RAM. MediaPipe no tiene wheels para
-32 bits, y en ese SoC va a pocos FPS. Haar viene dentro de OpenCV, no descarga
-modelos y a 320x240 corre de sobra.
+### Por qué YuNet y no Haar
+Haar era la elección original, con el argumento de que un kiosko se mira de
+frente y eso es justo lo que Haar sabe hacer. **Medido, no se sostiene.** Contra
+la cámara real, con una persona delante moviéndose de forma normal:
 
-El precio de Haar es que **pide cara de frente**: si la persona mira hacia abajo
-o de perfil, no la ve. Para un kiosko al que uno se acerca a mirarlo, ese es
-justo el caso bueno. Se comprobó en la mac: mirando al teclado da `caras 0`,
-mirando a la pantalla engancha al instante.
+| detector | enganche | ms/frame | tamaño |
+|---|---|---|---|
+| Haar frontal | **28%** | 2.3 | (viene en OpenCV) |
+| YuNet | **96%** | 3.4 | 227 KB |
+
+692 frames. El fallo de Haar es que **no es invariante a rotación**: basta con
+ladear la cabeza para que deje de ver una cara que está de frente. En la práctica
+Lavi se dormía con alguien delante, que es justo lo que la presencia debía
+evitar. YuNet cuesta 1.1 ms más, irrelevante con `detect_fps` a 8, que da 125 ms
+de presupuesto por detección.
+
+Se midieron y descartaron, en vez de suponerlos:
+- **`haarcascade_upperbody`**: 0% de enganche en 690 frames. No detectó a nadie
+  ni una sola vez. Busca cabeza+hombros de alguien a distancia, y quien mira un
+  kiosko de cerca le llena el encuadre con la cara.
+- **`haarcascade_profileface`**: 2%.
+
+### Por qué no MediaPipe (sigue en pie, por otro motivo)
+El argumento viejo era que MediaPipe va lento en un Cortex-A53. El motivo real y
+comprobable es más simple: **PyPI no publica ninguna wheel de MediaPipe para
+Linux ARM**. Las únicas ARM son `macosx_11_0_arm64` y `win_arm64`. O sea que
+MediaPipe instala en la mac de desarrollo y **no** en la Pi de destino, que es la
+peor combinación posible: no te enteras hasta el día del montaje.
+
+Lo que sí sirve es que OpenCV Zoo publica los modelos de MediaPipe **exportados a
+ONNX**, que corren sobre el `cv2.dnn` que ya está instalado. Esa es la vía para
+los gestos, y no el paquete `mediapipe`.
 
 ## Arquitectura
 
@@ -57,11 +77,14 @@ lavi/
 │   ├── __init__.py
 │   ├── platform_detect.py  # mac / raspberry / linux
 │   ├── camera.py           # OpenCVCamera, PiCamera, open_camera()
-│   ├── detector.py         # FaceDetector (Haar)
+│   ├── detector.py         # FaceDetector (YuNet, con Haar de respaldo)
 │   ├── service.py          # VisionService: captura y detecta en un thread
-│   └── preview.py          # CameraPreview: overlay colapsable
+│   ├── preview.py          # CameraPreview: overlay colapsable
+│   └── models/
+│       └── face_detection_yunet_2023mar.onnx   # 227 KB, versionado
 ├── engine/
-│   └── presence.py         # PresenceTracker: dormida / despierta
+│   ├── presence.py         # PresenceTracker: dormida / despierta
+│   └── gaze.py             # GazeTracker: hacia dónde mira
 ```
 
 ### Detección de plataforma
@@ -139,8 +162,10 @@ La imagen se reescala con OpenCV y no con pygame porque es bastante más barato.
     "width": 320, "height": 240,
     "capture_fps": 15, "detect_fps": 8,
     "flip_horizontal": true, "warmup_frames": 10,
+    "score_threshold": 0.7,
     "scale_factor": 1.2, "min_neighbors": 5, "min_face_fraction": 0.15
   },
+  "gaze": { "enabled": true, "time_constant": 0.25 },
   "preview": {
     "enabled": true, "start_expanded": false,
     "position": "bottom_right", "width_fraction": 0.22,
@@ -192,21 +217,45 @@ resolución de captura, o usar `python3-opencv` de apt en vez de la wheel de pip
 ## Pendiente / riesgos
 
 - [ ] **Nada de esto se ha probado en la Pi.** Todo lo verificado es en mac. El
-      camino de `picamera2` está escrito a ciegas contra su API documentada.
+      camino de `picamera2` está escrito a ciegas contra su API documentada. Ya
+      van tres decisiones seguidas que acaban aquí (RAM, YuNet, gestos): esto ha
+      dejado de ser un pendiente y es *el* bloqueo del proyecto.
 - [ ] Medir RAM, CPU y ms de detección reales en la 3B, y revisar el objetivo de
-      rendimiento con esos números.
+      rendimiento con esos números. YuNet es una red, no un cascade: en un
+      Cortex-A53 los 3.4 ms de la mac serán bastantes más.
 - [ ] `pygame` y `cv2` traen cada uno su propia copia de `libSDL2`, y macOS avisa
       de clases duplicadas ("may cause mysterious crashes"). No dio problemas en
       las pruebas. En la Pi con `python3-opencv` de apt no debería pasar, porque
       usa la librería del sistema.
-- [ ] Decidir qué hacer con los gestos: o hardware más potente (Pi 4/5), o
-      heurística por movimiento en vez de landmarks.
-- [ ] La posición de la cara ya se detecta pero no se usa. Es lo que habilitaría
-      que la mirada siga a la persona.
+- [x] ~~La posición de la cara ya se detecta pero no se usa.~~ Hecho:
+      `GazeTracker` mueve los ojos hacia la persona.
+- [ ] **Gestos**: la vía está abierta y medida, falta decidir. OpenCV Zoo publica
+      los modelos de MediaPipe en ONNX, o sea que corren sobre `cv2.dnn` sin el
+      paquete `mediapipe` y por tanto sí van en ARM. Medido en la mac:
+      `palm_detection` 10.4 ms + `handpose` (21 landmarks) 5.9 ms = **16.3 ms**,
+      5.4x YuNet, y 7.6 MB de modelos. Cabe en los 125 ms de presupuesto en la
+      mac; **en la 3B es una incógnita seria**. Con 21 landmarks, "amor y paz"
+      es contar dedos extendidos y el saludo es seguir la muñeca en el tiempo.
+- [ ] **Lavi parece un programa, no un ser vivo.** El ciclo por temporizador la
+      delata: cambia de cara sola cada pocos segundos sin que pase nada. Y el pop
+      es un síntoma, no una decisión estética — existe para tapar el corte de
+      cambiar de objeto `Face`. Mientras la cara sea una colección de siete caras
+      discretas, habrá cortes que tapar. Lo que pide el diseño es lo contrario:
+      un estado de reposo tranquilo con micro-movimiento (respiración, parpadeo,
+      derivas de mirada) y expresiones que sean **reacciones a algo**, morfando
+      de forma continua en vez de conmutando.
 
 ## Cómo se verificó
 
 - Detección de plataforma y cámara: contra la FaceTime HD real.
+- Detectores: 690-692 frames contra la cámara real con una persona delante
+  moviéndose. Haar 28%, YuNet 96%, profile 2%, upperbody 0%. De ahí el cambio a
+  YuNet, y de ahí que upperbody se descartara en vez de integrarse.
+- MediaPipe: consultando las wheels que publica PyPI, no suponiendo. Ninguna para
+  Linux ARM.
+- Mirada: comprobando el mapeo (cara a la izquierda -> gaze -0.75, a la derecha
+  -> +0.74, sin cara -> vuelve a 0) y que el suavizado no copia los saltos de
+  golpe (0.09 del recorrido en el primer frame).
 - Presencia: guionizando `has_face` sobre el `main()` real, comprobando que
   arranca dormida, despierta 0.47s después de aparecer la cara, cicla, se duerme
   al irse, y nunca muestra `sleepy` con alguien delante.
