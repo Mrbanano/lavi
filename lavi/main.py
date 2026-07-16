@@ -16,6 +16,7 @@ from lavi.faces.particles import FloatingGlyphs
 from lavi.faces.expressions import BASELINE, SLEEP
 from lavi.vision.service import VisionService
 from lavi.vision.preview import CameraPreview
+from lavi.profiler import Profiler
 
 
 def load_config():
@@ -34,6 +35,8 @@ def parse_args(argv=None):
                         help="arranca con el preview de cámara abierto")
     parser.add_argument("--no-camera", action="store_true",
                         help="sin cámara ni detección: se queda despierta y tranquila")
+    parser.add_argument("--profile", action="store_true",
+                        help="guarda logs de rendimiento (FPS, CPU, RAM, visión) a un CSV")
     return parser.parse_args(argv)
 
 
@@ -44,6 +47,7 @@ def apply_args(config, args):
         config.setdefault("preview", {})["start_expanded"] = True
     if args.no_camera:
         config.setdefault("camera", {})["enabled"] = False
+    config["_profile"] = args.profile
     return config
 
 
@@ -78,6 +82,8 @@ def main(argv=None):
     else:
         # Con cámara arranca dormida, esperando a que llegue alguien.
         mood.set_baseline(SLEEP)
+
+    profiler = Profiler() if config.get("_profile") else None
 
     while renderer.running:
         for action in renderer.handle_events():
@@ -158,9 +164,14 @@ def main(argv=None):
         zzz.draw(renderer.screen, rect)
         notes.draw(renderer.screen, rect)
         preview.draw(renderer.screen, vision)
+        if profiler:
+            profiler.tick(vision.stats())
         renderer.update()
 
     vision.stop()
+    if profiler:
+        print("[lavi] perfil guardado en %s" % profiler.path)
+        profiler.stop()
     renderer.quit()
 
 
